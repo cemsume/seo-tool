@@ -21,7 +21,6 @@ jobs:
         with:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
-          package: false
           nsis: false
           sign: false
       - name: Get version
