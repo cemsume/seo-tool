@@ -92,7 +92,7 @@ jobs:
         run: |
           xattr -r -d com.apple.quarantine bin/HeadofMasterCEMO.app
           mv bin/HeadofMasterCEMO.app "bin/Head of Master CEMO.app"
-          xattr -r -d com.apple.quarantine bin/Head of Master CEMO.app
+          xattr -r -d com.apple.quarantine "bin/Head of Master CEMO.app"
           ./create-dmg/create-dmg \
             --no-internet-enable \
             --volname "Head of Master CEMO" \
