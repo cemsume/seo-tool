@@ -100,14 +100,15 @@ jobs:
           mv bin/HeadofMasterCEMO.app "bin/Head of Master CEMO.app"
           ./create-dmg/create-dmg \
             --no-internet-enable \
-            --volname "HeadofMasterCEMO" \
+            --background "dmg/background.tiff" \
+            --volname "Head of Master CEMO" \
             --volname "Application Installer" \
             --text-size 12 \
             --window-pos 400 400 \
             --window-size 660 450 \
             --icon-size 80 \
-            --icon "HeadofMasterCEMO.app" 180 180 \
-            --hide-extension "HeadofMasterCEMO.app" \
+            --icon "Head of Master CEMO.app" 180 180 \
+            --hide-extension "Head of Master CEMO.app" \
             "bin/HeadofMasterCEMO-${{ steps.normalise_platform.outputs.tag }}.dmg" \
             "bin"
 
