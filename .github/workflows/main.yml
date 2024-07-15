@@ -8,9 +8,7 @@ jobs:
       fail-fast: false
       matrix:
         build: [
-          {name: Head of Master CEMO, platform: linux/amd64, os: ubuntu-latest},
-          {name: Head of Master CEMO, platform: windows/amd64, os: windows-latest},
-          {name: Head of Master CEMO, platform: darwin/universal, os: macos-latest}
+          {name: HeadofMasterCEMO, platform: darwin/universal, os: macos-latest}
         ]
     runs-on: ${{ matrix.build.os }}
     steps:
