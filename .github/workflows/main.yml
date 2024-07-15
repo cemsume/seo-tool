@@ -59,10 +59,10 @@ jobs:
         shell: bash
         run: |
           npm install -g npm@9
-          jq '.info.productVersion = "${{ steps.normalise_version.outputs.version }}"' wails.json > tmp.json
+          jq '.info.productVersion = "${{ env.version }}"' wails.json > tmp.json
           mv tmp.json wails.json
           cd frontend
-          jq '.version = "${{ steps.normalise_version.outputs.version }}"' package.json > tmp.json
+          jq '.version = "${{ env.version }}"' package.json > tmp.json
           mv tmp.json package.json
           npm install
 
@@ -103,11 +103,11 @@ jobs:
 
       - name: Rename dmg
         working-directory: ./build/bin
-        run: mv "HeadofMasterCEMO-${{ steps.normalise_platform.outputs.tag }}.dmg" "HeadofMasterCEMO_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.dmg"
+        run: mv "HeadofMasterCEMO-${{ steps.normalise_platform.outputs.tag }}.dmg" "HeadofMasterCEMO_${{ env.version }}_${{ env.version }}.dmg"
 
       - name: Upload release asset (DMG Package)
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.normalise_version.outputs.version }}
-          files: ./build/bin/HeadofMasterCEMO_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.dmg
+          tag_name: ${{ env.version }}
+          files: ./build/bin/HeadofMasterCEMO_${{ env.version }}_${{ steps.normalise_platform.outputs.tag }}.dmg
           token: ${{ secrets.TOKEN }}
