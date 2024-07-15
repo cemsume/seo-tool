@@ -1,5 +1,7 @@
 # README
 
+[![Wails build](https://github.com/cemsume/seo-tool/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/cemsume/seo-tool/actions/workflows/main.yml)
+
 ## About
 
 This template comes with Vite, React, TypeScript, TailwindCSS and shadcn/ui.
