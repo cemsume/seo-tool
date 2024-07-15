@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           CGO_ENABLED=1 wails build -platform ${{ matrix.platform }} \
-          -ldflags "-X main.version=${{ env.version }}
+          -ldflags "-X main.version=${{ env.version }}"
 
       #      - name: Notarise macOS app + create dmg
       #        shell: bash
