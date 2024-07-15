@@ -100,7 +100,6 @@ jobs:
           mv bin/HeadofMasterCEMO.app "bin/Head of Master CEMO.app"
           ./create-dmg/create-dmg \
             --no-internet-enable \
-            --background "dmg/background.tiff" \
             --volname "Head of Master CEMO" \
             --volname "Application Installer" \
             --text-size 12 \
