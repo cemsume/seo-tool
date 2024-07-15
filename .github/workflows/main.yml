@@ -78,7 +78,38 @@ jobs:
       #        env:
       #          AC_USERNAME: ${{ secrets.AC_USERNAME }}
       #          AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+      - name: Remove extended attributes
+        working-directory: ./build
+        run: xattr -r -d com.apple.quarantine bin/HeadofMasterCEMO.app
 
+      - name: Create zip archive for notarization
+        working-directory: ./build
+        run: ditto -c -k --sequesterRsrc --keepParent bin/HeadofMasterCEMO.app yourapp.zip
+
+      - name: Notarize the app
+        env:
+          APPLE_ID: ${{ secrets.APPLE_USER }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_PASS }}
+        run: |
+          xcrun altool --notarize-app -f HeadofMasterCEMO.zip --primary-bundle-id "com.bcs.HeadofMasterCEMO" -u "$APPLE_ID" -p "$APPLE_ID_PASSWORD" --output-format xml | tee notarization.xml
+          REQUEST_UUID=$(xpath -e '//key[.="RequestUUID"]/following-sibling::string[1]/text()' notarization.xml)
+
+          # Wait for notarization to complete
+          while true; do
+            STATUS=$(xcrun altool --notarization-info "$REQUEST_UUID" -u "$APPLE_ID" -p "$APPLE_ID_PASSWORD" --output-format xml | xpath -e '//key[.="Status"]/following-sibling::string[1]/text()')
+            echo "Notarization status: $STATUS"
+            if [ "$STATUS" == "success" ]; then
+              break
+            elif [ "$STATUS" == "in progress" ]; then
+              sleep 60
+            else
+              xcrun altool --notarization-info "$REQUEST_UUID" -u "$APPLE_ID" -p "$APPLE_ID_PASSWORD" --output-format xml
+              exit 1
+            fi
+          done
+
+      - name: Staple the notarization ticket
+        run: xcrun stapler staple ./build/darwin/yourapp.app
       - name: Checkout create-image
         uses: actions/checkout@v2
         with:
@@ -90,9 +121,7 @@ jobs:
         shell: bash
         working-directory: ./build
         run: |
-          xattr -r -d com.apple.quarantine bin/HeadofMasterCEMO.app
           mv bin/HeadofMasterCEMO.app "bin/Head of Master CEMO.app"
-          xattr -r -d com.apple.quarantine "bin/Head of Master CEMO.app"
           ./create-dmg/create-dmg \
             --no-internet-enable \
             --volname "Head of Master CEMO" \
