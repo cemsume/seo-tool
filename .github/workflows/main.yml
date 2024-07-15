@@ -20,7 +20,7 @@ jobs:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
   release:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     needs: [build]
     steps:
     - uses: actions/checkout@master
