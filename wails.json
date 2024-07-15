@@ -9,5 +9,12 @@
   "author": {
     "name": "BCS",
     "email": "cemsume@neredekal.com"
+  },
+  "info": {
+    "companyName": "BCS",
+    "productName": "Head of Master CEMO",
+    "productVersion": "0.0.13",
+    "copyright": "Copyright © 2024",
+    "comments": "Head of Master CEMO"
   }
 }
