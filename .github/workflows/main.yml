@@ -103,7 +103,7 @@ jobs:
 
       - name: Rename dmg
         working-directory: ./build/bin
-        run: mv "HeadofMasterCEMO-${{ steps.normalise_platform.outputs.tag }}.dmg" "HeadofMasterCEMO_${{ env.version }}_${{ env.version }}.dmg"
+        run: mv "HeadofMasterCEMO-${{ steps.normalise_platform.outputs.tag }}.dmg" "HeadofMasterCEMO_${{ env.version }}_${{ steps.normalise_platform.outputs.tag}}.dmg"
 
       - name: Upload release asset (DMG Package)
         uses: softprops/action-gh-release@v1
