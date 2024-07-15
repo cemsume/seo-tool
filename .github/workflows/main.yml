@@ -68,7 +68,9 @@ jobs:
 
       - name: Build wails app for macOS
         shell: bash
-        run: CGO_ENABLED=1 wails build -platform ${{ matrix.platform }}
+        run: |
+          CGO_ENABLED=1 wails build -platform ${{ matrix.platform }} \
+          xattr -d com.apple.quarantine ./build/darwin/HeadofMasterCEMO.app
 
       #      - name: Notarise macOS app + create dmg
       #        shell: bash
