@@ -90,9 +90,9 @@ jobs:
         shell: bash
         working-directory: ./build
         run: |
-          xattr -cr com.apple.quarantine bin/HeadofMasterCEMO.app
+          xattr -cr bin/HeadofMasterCEMO.app
           mv bin/HeadofMasterCEMO.app "bin/Head of Master CEMO.app"
-          xattr -cr com.apple.quarantine "bin/Head of Master CEMO.app"
+          xattr -cr "bin/Head of Master CEMO.app"
           ./create-dmg/create-dmg \
             --no-internet-enable \
             --volname "Head of Master CEMO" \
