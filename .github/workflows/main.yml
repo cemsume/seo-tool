@@ -97,7 +97,7 @@ jobs:
         shell: bash
         working-directory: ./build
         run: |
-          mv bin/HeadofMasterCEMO.app "bin/HeadofMasterCEMO.app"
+          mv bin/HeadofMasterCEMO.app "bin/Head of Master CEMO.app"
           ./create-dmg/create-dmg \
             --no-internet-enable \
             --volname "HeadofMasterCEMO" \
