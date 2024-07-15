@@ -97,21 +97,17 @@ jobs:
         shell: bash
         working-directory: ./build
         run: |
-          mv bin/HeadofMasterCEMO.app "bin/Tiny RDM.app"
+          mv bin/HeadofMasterCEMO.app "bin/HeadofMasterCEMO.app"
           ./create-dmg/create-dmg \
             --no-internet-enable \
-            --volname "Tiny RDM" \
-            --volicon "bin/Tiny RDM.app/Contents/Resources/iconfile.icns" \
-            --background "dmg/background.tiff" \
+            --volname "HeadofMasterCEMO" \
+            --volname "Application Installer" \
             --text-size 12 \
             --window-pos 400 400 \
             --window-size 660 450 \
             --icon-size 80 \
-            --icon "Tiny RDM.app" 180 180 \
-            --hide-extension "Tiny RDM.app" \
-            --app-drop-link 480 180 \
-            --add-file "Repair" "dmg/fix-app" 230 290 \
-            --add-file "损坏修复" "dmg/fix-app_zh" 430 290 \
+            --icon "HeadofMasterCEMO.app" 180 180 \
+            --hide-extension "HeadofMasterCEMO.app" \
             "bin/HeadofMasterCEMO-${{ steps.normalise_platform.outputs.tag }}.dmg" \
             "bin"
 
