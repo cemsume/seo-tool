@@ -19,6 +19,10 @@ jobs:
         with:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
+      - name: Get version
+        run: |
+          version=$(ls azure-storage-explorer_*_x64.deb | grep -Po '(?<=azure-storage-explorer_)[^\_]+')
+          echo "version=$version" >> $GITHUB_ENV
       - name: Create tag
         uses: actions/github-script@v5
         with:
