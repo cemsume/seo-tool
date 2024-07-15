@@ -19,3 +19,18 @@ jobs:
         with:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
+  release:
+    runs-on: macos-latest
+    needs: [build]
+    steps:
+    - uses: actions/checkout@master
+    - name: Create release
+      uses: Roang-zero1/github-create-release-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+    - name: Upload release artifacts
+      uses: Roang-zero1/github-upload-release-artifacts-action@v2
+      with:
+        args: "dist/bin/ dist/shell/compiled.sh"
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
