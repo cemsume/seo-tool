@@ -73,14 +73,14 @@ func fetchUrl(url string, userAgent string, results chan<- Crawl) {
 	// sem.Lock()         // Acquire semaphore
 	// defer sem.Unlock() // Release semaphore
 
-	log.Printf("[main] Starting task %s", url)
+	// log.Printf("[main] Starting task %s", url)
 	time.Sleep(500 * time.Millisecond)
 	crawlData := Crawl{
 		Url:       url,
 		ExtraData: CrawlExtraData{},
 	}
 	redirects := []string{}
-	log.Println("Crawling URL:", url)
+	// log.Println("Crawling URL:", url)
 	resp, err := client.SetHeader("User-Agent", userAgent).SetHeader("Accept-Encoding", "gzip, deflate, br").R().Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -116,41 +116,50 @@ func worker(urls <-chan string, results chan<- Crawl, userAgent string, wg *sync
 	}
 }
 
+func processURLs(urls []string, numWorkers int, requestDelay time.Duration, userAgent string) <-chan Crawl {
+	var wg sync.WaitGroup
+	urlChan := make(chan string, len(urls))
+	results := make(chan Crawl, len(urls))
+
+	// Worker goroutine'leri başlat
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go worker(urlChan, results, userAgent, &wg, requestDelay)
+	}
+
+	// URL'leri kanala gönder
+	go func() {
+		for _, url := range urls {
+			urlChan <- url
+		}
+		close(urlChan)
+	}()
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	return results
+}
+
 func (c *Crawl) StartCrawl(urls string, userAgent string) {
 	urlList := strings.Split(urls, "\n")
 	clearCrawlResult()
 	userAgent = getUserAgent(userAgent)
 
-	var wg sync.WaitGroup
-	urlChan := make(chan string, len(urlList))
-	results := make(chan Crawl, len(urlList))
+	log.Println("URL List:", len(urlList))
 
-	const numWorkers = 5 // Eşzamanlı olarak çalışacak goroutine sayısı
+	const numWorkers = 5
 	const requestDelay = 100 * time.Millisecond
 
+	results := processURLs(urlList, numWorkers, requestDelay, userAgent)
+
 	go func() {
-		for i := 0; i < numWorkers; i++ {
-			wg.Add(1)
-			go worker(urlChan, results, userAgent, &wg, requestDelay)
-		}
-
-		go func() {
-			for _, url := range urlList {
-				urlChan <- url
-			}
-			close(urlChan)
-		}()
-
-		go func() {
-			wg.Wait()
-			close(results)
-		}()
-
 		for result := range results {
 			setCrawlResult(result)
 		}
 	}()
-
 }
 
 func setCrawlResult(crawl Crawl) {

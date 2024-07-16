@@ -59,8 +59,8 @@ function App() {
     if (startProccess) {
       intervalId = setInterval(() => {
         GetCrawlResults().then((response) => {
-          console.log(response)
-          setResults((prevResults) => [...prevResults, ...response as Result[]]);
+          const res = (response as Result[]).filter((x: Result) => !results.some((y: Result) => y.Url === x.Url));
+          setResults((prevResults) => [...prevResults, ...res as Result[]]);
         });
 
         if (results.length === totalCount) {
@@ -69,7 +69,6 @@ function App() {
       }, 1000);
     }
 
-    // Cleanup function: component unmount olduğunda interval'i temizle
     return () => clearInterval(intervalId);
   }, [startProccess, results]);
 
@@ -179,11 +178,6 @@ function App() {
 
 
 
-  const defaultColDef = useMemo(() => ({
-    filter: 1,
-    flex: 1
-
-  }), [])
   const [selectedValue, setSelectedValue] = useState('desktop');
 
   const handleChange = (event: any) => {
