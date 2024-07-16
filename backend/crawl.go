@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Crawl struct {
@@ -19,6 +21,7 @@ type Crawl struct {
 	Redirect   string
 	Body       string
 	ExtraData  CrawlExtraData
+	ctx        context.Context
 }
 
 type CrawlExtraData struct {
@@ -27,9 +30,9 @@ type CrawlExtraData struct {
 	Headers       map[string]string
 }
 
-var crawlResult []Crawl
+var crawlResult *[]Crawl
 
-func NewCrawl() *Crawl {
+func NewCrawl(ctx context.Context) *Crawl {
 	return &Crawl{
 		Url:        "",
 		StatusCode: 0,
@@ -37,6 +40,7 @@ func NewCrawl() *Crawl {
 		Size:       0,
 		Age:        "",
 		Redirect:   "",
+		ctx:        ctx,
 		ExtraData: CrawlExtraData{
 			RedirectLinks: []string{},
 			RedirectCount: 0,
@@ -65,10 +69,8 @@ func getUserAgent(userAgent string) string {
 	return "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html) (headofmastercemo)"
 }
 
-var client = resty.New()
-
 func fetchUrl(url string, userAgent string, results chan<- Crawl) {
-
+	var client = resty.New().NewRequest().SetContext(context.Background()).SetHeader("User-Agent", userAgent).SetHeader("Accept-Encoding", "gzip, deflate, br")
 	// defer wg.Done()
 	// sem.Lock()         // Acquire semaphore
 	// defer sem.Unlock() // Release semaphore
@@ -81,7 +83,7 @@ func fetchUrl(url string, userAgent string, results chan<- Crawl) {
 	}
 	redirects := []string{}
 	// log.Println("Crawling URL:", url)
-	resp, err := client.SetHeader("User-Agent", userAgent).SetHeader("Accept-Encoding", "gzip, deflate, br").R().Get(url)
+	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
@@ -121,13 +123,11 @@ func processURLs(urls []string, numWorkers int, requestDelay time.Duration, user
 	urlChan := make(chan string, len(urls))
 	results := make(chan Crawl, len(urls))
 
-	// Worker goroutine'leri başlat
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go worker(urlChan, results, userAgent, &wg, requestDelay)
 	}
 
-	// URL'leri kanala gönder
 	go func() {
 		for _, url := range urls {
 			urlChan <- url
@@ -143,33 +143,28 @@ func processURLs(urls []string, numWorkers int, requestDelay time.Duration, user
 	return results
 }
 
-func (c *Crawl) StartCrawl(urls string, userAgent string) {
+var activeFetches sync.Map
+
+func StartCrawl(ctx context.Context, urls string, userAgent string) {
+	runtime.EventsOffAll(ctx)
 	urlList := strings.Split(urls, "\n")
-	clearCrawlResult()
+	crawlResult = &[]Crawl{}
 	userAgent = getUserAgent(userAgent)
 
 	log.Println("URL List:", len(urlList))
 
-	const numWorkers = 5
-	const requestDelay = 100 * time.Millisecond
+	const numWorkers = 35
+	const requestDelay = 0 * time.Millisecond
 
 	results := processURLs(urlList, numWorkers, requestDelay, userAgent)
 
 	go func() {
 		for result := range results {
-			setCrawlResult(result)
+			runtime.EventsEmit(ctx, "crawlResult", result)
 		}
 	}()
 }
 
-func setCrawlResult(crawl Crawl) {
-	crawlResult = append(crawlResult, crawl)
-}
-
-func (c *Crawl) GetCrawlResults() []Crawl {
-	return crawlResult
-}
-
-func clearCrawlResult() {
-	crawlResult = []Crawl{}
+func CancelFetch(ctx context.Context) {
+	runtime.EventsOffAll(ctx)
 }

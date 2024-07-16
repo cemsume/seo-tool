@@ -16,13 +16,14 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { useEffect, useMemo, useState } from "react";
-import { StartCrawl, GetCrawlResults } from '../wailsjs/go/backend/Crawl'
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CancelFetch, StartCrawl } from '../wailsjs/go/main/App.js';
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import Drawer from 'react-modern-drawer'
 import 'react-modern-drawer/dist/index.css'
+import { EventsOn, EventsOffAll, EventsOff } from '../wailsjs/runtime/runtime.js'
 
 interface Result {
   Url: string;
@@ -37,6 +38,7 @@ interface Result {
 }
 
 function App() {
+  const gridRef = useRef<AgGridReact>(null);
 
   const [urls, setUrls] = useState("")
   const [results, setResults] = useState<Result[]>([])
@@ -51,26 +53,17 @@ function App() {
   const handleUrlChange = (event: any) => {
     setUrls(event.target.value);
   };
-  const [startProccess, setStartProccess] = useState(false);
   useEffect(() => {
-    let intervalId: any;
-    console.log("startProccess", startProccess)
-    console.log("results", results)
-    if (startProccess) {
-      intervalId = setInterval(() => {
-        GetCrawlResults().then((response) => {
-          const res = (response as Result[]).filter((x: Result) => !results.some((y: Result) => y.Url === x.Url));
-          setResults((prevResults) => [...prevResults, ...res as Result[]]);
-        });
+    EventsOn("crawlResult", (result: Result) => {
+      console.log({ result })
+      setResults((prevResults) => [...prevResults, result]);
+    });
 
-        if (results.length === totalCount) {
-          setStartProccess(false)
-        }
-      }, 1000);
-    }
+    return () => {
+      EventsOff('crawlResult');
+    };
 
-    return () => clearInterval(intervalId);
-  }, [startProccess, results]);
+  }, []);
 
 
   const renderBottomPanel = () => {
@@ -153,7 +146,7 @@ function App() {
         {results.length} / {totalCount}
       </div>
       <div>
-        v0.0.27
+        v0.0.28
       </div>
     </div>
   }
@@ -162,6 +155,7 @@ function App() {
 
   const onClickUrlButton = () => {
     setResults([])
+    CancelFetch();
     setSelectedItem(undefined)
     const newResults = urls.split("\n").map((url) => ({
       Url: url,
@@ -174,7 +168,6 @@ function App() {
     })) as Result[];
     setTotalCount(newResults.length)
     StartCrawl(urls, selectedValue).then((response) => {
-      setStartProccess(true)
       setUrls("")
     })
   }
@@ -218,6 +211,20 @@ function App() {
     }
   };
 
+
+
+  const onBtnExport = () => {
+    console.log("Exporting data");
+    const params = getParams();
+    gridRef.current!.api.exportDataAsCsv(params);
+  };
+
+  function getParams() {
+    return {
+      columnSeparator: ';',
+      suppressQuotes: true
+    };
+  }
   return (
     <>
       {renderNavMenu()}
@@ -239,11 +246,13 @@ function App() {
           <ResizablePanel>
             <div className="ag-theme-quartz" style={{ height: 500 }}>
               <AgGridReact
+                ref={gridRef}
+                suppressExcelExport={true}
                 onRowSelected={onRowSelected}
                 rowSelection="single"
                 rowData={results} columnDefs={
                   [
-                    { headerName: "URL", field: "Url", width: 400, sortable: true, filter: true, flex: 1 },
+                    { headerName: "URL", field: "Url", width: 400, sortable: true, filter: true, flex: 1, minWidth: 550 },
                     { headerName: "Status Code", field: "StatusCode", sortable: true, filter: true, flex: 1 },
                     { headerName: "Type", field: "Type", sortable: true, filter: true, flex: 1 },
                     { headerName: "Size", field: "Size", sortable: true, filter: true, flex: 1 },

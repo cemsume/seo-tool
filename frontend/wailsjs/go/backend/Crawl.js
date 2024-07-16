@@ -5,11 +5,3 @@
 export function Crawl() {
   return window['go']['backend']['Crawl']['Crawl']();
 }
-
-export function GetCrawlResults() {
-  return window['go']['backend']['Crawl']['GetCrawlResults']();
-}
-
-export function StartCrawl(arg1, arg2) {
-  return window['go']['backend']['Crawl']['StartCrawl'](arg1, arg2);
-}

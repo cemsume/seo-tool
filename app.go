@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"headofseo/backend"
 )
 
 // App struct
@@ -41,4 +42,12 @@ func (a *App) shutdown(ctx context.Context) {
 // Greet returns a greeting for the given name
 func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
+}
+
+func (a *App) StartCrawl(urls string, userAgent string) {
+	backend.StartCrawl(a.ctx, urls, userAgent)
+}
+
+func (a *App) CancelFetch() {
+	backend.CancelFetch(a.ctx)
 }

@@ -26,7 +26,7 @@ var icon []byte
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
-	crawler := backend.NewCrawl()
+	crawler := backend.NewCrawl(app.ctx)
 
 	AppMenu := menu.NewMenu()
 	FileMenu := AppMenu.AddSubmenu("File")
@@ -36,7 +36,7 @@ func main() {
 		runtime.Quit(app.ctx)
 	})
 	FileMenu.AddText("Restart", keys.CmdOrCtrl("r"), func(_ *menu.CallbackData) {
-		runtime.WindowReload(app.ctx)
+		runtime.WindowReloadApp(app.ctx)
 	})
 
 	AppMenu.Append(menu.EditMenu()) // on macos platform, we should append EditMenu to enable Cmd+C,Cmd+V,Cmd+Z... shortcut
