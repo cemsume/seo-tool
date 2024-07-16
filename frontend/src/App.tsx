@@ -146,7 +146,7 @@ function App() {
         {results.length} / {totalCount}
       </div>
       <div>
-        v0.0.28
+        v0.0.29
       </div>
     </div>
   }
