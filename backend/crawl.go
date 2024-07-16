@@ -100,7 +100,7 @@ func (c *Crawl) StartCrawl(urls string, userAgent string) {
 				return nil
 			})
 
-			resp, err := client.SetHeader("User-Agent", userAgent).R().Get(url)
+			resp, err := client.SetHeader("User-Agent", userAgent).SetHeader("Accept-Encoding", "gzip, deflate, br").R().Get(url)
 			if err != nil {
 				fmt.Println("Error:", err)
 			}
