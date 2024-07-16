@@ -40,6 +40,8 @@ function App() {
 
   const [urls, setUrls] = useState("")
   const [results, setResults] = useState<Result[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+
   const [isOpen, setIsOpen] = useState(false)
 
   const toggleDrawer = () => {
@@ -52,27 +54,18 @@ function App() {
   const [startProccess, setStartProccess] = useState(false);
   useEffect(() => {
     let intervalId: any;
+    console.log("startProccess", startProccess)
+    console.log("results", results)
     if (startProccess) {
       intervalId = setInterval(() => {
         GetCrawlResults().then((response) => {
-          console.log({ response })
-
-          const updatedUrls = results.map(urlObj => {
-            const apiUrlObj = response.find((apiObj) => (apiObj as Result)?.Url === urlObj.Url && !urlObj.Updated);
-            return apiUrlObj ? apiUrlObj : urlObj;
-          });
-
-
-          // console.log({ updatedResults })
-          if (updatedUrls.length > 0)
-            setResults(updatedUrls as Result[]);
-          if (updatedUrls.length === response.length) {
-            setStartProccess(false)
-          }
-
-
-          // setResults(response)
+          console.log(response)
+          setResults((prevResults) => [...prevResults, ...response as Result[]]);
         });
+
+        if (results.length === totalCount) {
+          setStartProccess(false)
+        }
       }, 1000);
     }
 
@@ -157,6 +150,9 @@ function App() {
     return <div className="pl-20 flex space-x-4  h-10 content-between rounded-md border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-950" >
       {renderDialog()}
       {renderUserAgentRadioGroup()}
+      <div>
+        {results.length} / {totalCount}
+      </div>
     </div>
   }
 
@@ -174,8 +170,7 @@ function App() {
       Redirect: "",
       ExtraData: {},
     })) as Result[];
-    console.log({ selectedValue })
-    setResults((prevResults) => [...prevResults, ...newResults]);
+    setTotalCount(newResults.length)
     StartCrawl(urls, selectedValue).then((response) => {
       setStartProccess(true)
       setUrls("")
@@ -220,6 +215,12 @@ function App() {
 
   const [selectedItem, setSelectedItem] = useState<Result>()
 
+  const onRowSelected = (event: any) => {
+    if (event.node.selected) {
+      setSelectedItem(event.data);
+    }
+  };
+
   return (
     <>
       {renderNavMenu()}
@@ -241,20 +242,18 @@ function App() {
           <ResizablePanel>
             <div className="ag-theme-quartz" style={{ height: 500 }}>
               <AgGridReact
-                onRowSelected={(event) => {
-                  setSelectedItem(event.data)
-                }}
+                onRowSelected={onRowSelected}
                 rowSelection="single"
                 rowData={results} columnDefs={
                   [
-                    { headerName: "URL", field: "Url", width: 400 },
-                    { headerName: "Status Code", field: "StatusCode" },
-                    { headerName: "Type", field: "Type" },
-                    { headerName: "Size", field: "Size" },
-                    { headerName: "Age", field: "Age" },
-                    { headerName: "Redirect", field: "Redirect" },
+                    { headerName: "URL", field: "Url", width: 400, sortable: true, filter: true, flex: 1 },
+                    { headerName: "Status Code", field: "StatusCode", sortable: true, filter: true, flex: 1 },
+                    { headerName: "Type", field: "Type", sortable: true, filter: true, flex: 1 },
+                    { headerName: "Size", field: "Size", sortable: true, filter: true, flex: 1 },
+                    { headerName: "Age", field: "Age", sortable: true, filter: true, flex: 1 },
+                    { headerName: "Redirect", field: "Redirect", sortable: true, filter: true, flex: 1 },
                   ]
-                } defaultColDef={defaultColDef} />
+                } />
             </div>
           </ResizablePanel>
           <ResizablePanel>
