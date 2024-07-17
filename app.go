@@ -4,6 +4,12 @@ import (
 	"context"
 	"fmt"
 	"headofseo/backend"
+	"log"
+	"os"
+	"time"
+
+	"github.com/gocarina/gocsv"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -50,4 +56,42 @@ func (a *App) StartCrawl(urls string, userAgent string) {
 
 func (a *App) CancelFetch() {
 	backend.CancelFetch(a.ctx)
+}
+
+func (a *App) SaveFile(data []backend.Crawl) {
+	if len(data) == 0 {
+		log.Println("SaveFile: no data to save")
+		return
+	}
+
+	selection, _ := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Select Directory",
+		DefaultFilename: fmt.Sprintf("crawl-result-%s.csv", time.Now().Format("2006-01-02")),
+	})
+
+	csvContent, err := gocsv.MarshalString(&data)
+	if err != nil {
+		// handle error
+		log.Println("SaveFile: error ", err)
+	}
+	f, err := os.Create(selection)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	l, err := f.WriteString(csvContent)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+	fmt.Println(l, "bytes written successfully")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	log.Println("SaveFile: selection ", selection)
+	log.Println("SaveFile: err ", err)
 }

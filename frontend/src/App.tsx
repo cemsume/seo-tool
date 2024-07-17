@@ -17,7 +17,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CancelFetch, StartCrawl } from '../wailsjs/go/main/App.js';
+import { CancelFetch, StartCrawl, SaveFile } from '../wailsjs/go/main/App.js';
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -54,9 +54,8 @@ function App() {
     setUrls(event.target.value);
   };
   useEffect(() => {
-    EventsOn("crawlResult", (result: Result) => {
-      console.log({ result })
-      setResults((prevResults) => [...prevResults, result]);
+    EventsOn("crawlResult", (result: Result[]) => {
+      setResults((prevResults) => [...prevResults, ...result]);
     });
 
     return () => {
@@ -148,6 +147,7 @@ function App() {
       <div>
         v0.0.29
       </div>
+      <Button onClick={() => SaveFile(results)}> Export </Button>
     </div>
   }
 
@@ -246,6 +246,7 @@ function App() {
           <ResizablePanel>
             <div className="ag-theme-quartz" style={{ height: 500 }}>
               <AgGridReact
+                grandTotalRow='bottom'
                 ref={gridRef}
                 suppressExcelExport={true}
                 onRowSelected={onRowSelected}
