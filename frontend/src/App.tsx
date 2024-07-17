@@ -53,9 +53,16 @@ function App() {
   const handleUrlChange = (event: any) => {
     setUrls(event.target.value);
   };
+  const data: Result[] = [];
   useEffect(() => {
-    EventsOn("crawlResult", (result: Result[]) => {
-      setResults((prevResults) => [...prevResults, ...result]);
+    EventsOn("crawlResult", (result: Result) => {
+      setTimeout(() => {
+        gridRef.current!.api.applyTransactionAsync(
+          { add: [result] },
+        );
+      }, 0);
+
+      setResults((prevResults) => [...prevResults, result]);
     });
 
     return () => {
@@ -145,7 +152,7 @@ function App() {
         {results.length} / {totalCount}
       </div>
       <div>
-        v0.0.30
+        v0.0.31
       </div>
       <Button onClick={() => SaveFile(results)}> Export </Button>
     </div>
@@ -246,12 +253,12 @@ function App() {
           <ResizablePanel>
             <div className="ag-theme-quartz" style={{ height: 500 }}>
               <AgGridReact
-                grandTotalRow='bottom'
                 ref={gridRef}
                 suppressExcelExport={true}
                 onRowSelected={onRowSelected}
                 rowSelection="single"
-                rowData={results} columnDefs={
+                loading={false}
+                columnDefs={
                   [
                     { headerName: "URL", field: "Url", width: 400, sortable: true, filter: true, flex: 1, minWidth: 550 },
                     { headerName: "Status Code", field: "StatusCode", sortable: true, filter: true, flex: 1 },

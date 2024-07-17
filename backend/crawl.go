@@ -30,8 +30,6 @@ type CrawlExtraData struct {
 	Headers       map[string]string
 }
 
-var crawlResult *[]Crawl
-
 func NewCrawl(ctx context.Context) *Crawl {
 	return &Crawl{
 		Url:        "",
@@ -69,14 +67,18 @@ func getUserAgent(userAgent string) string {
 	return "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html) (headofmastercemo)"
 }
 
-func fetchUrl(url string, userAgent string) Crawl {
-	var client = resty.New().NewRequest().SetContext(context.Background()).SetHeader("User-Agent", userAgent).SetHeader("Accept-Encoding", "gzip, deflate, br")
+func fetchUrl(url string, userAgent string) *Crawl {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("panic occurred:", err)
+		}
+	}()
+	var client = resty.New().SetRetryCount(3).NewRequest().SetContext(context.Background()).SetHeader("User-Agent", userAgent).SetHeader("Accept-Encoding", "gzip, deflate, br")
 	// defer wg.Done()
 	// sem.Lock()         // Acquire semaphore
 	// defer sem.Unlock() // Release semaphore
 
 	// log.Printf("[main] Starting task %s", url)
-	time.Sleep(500 * time.Millisecond)
 	crawlData := Crawl{
 		Url:       url,
 		ExtraData: CrawlExtraData{},
@@ -86,6 +88,7 @@ func fetchUrl(url string, userAgent string) Crawl {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
+		return nil
 	}
 
 	crawlData.Type = resp.Header().Get("Content-Type")
@@ -107,33 +110,38 @@ func fetchUrl(url string, userAgent string) Crawl {
 		crawlData.Redirect = resp.RawResponse.Request.URL.String()
 	}
 
-	return crawlData
+	return &crawlData
 }
 
-func worker(urls <-chan string, results chan<- []Crawl, userAgent string, wg *sync.WaitGroup, delay time.Duration, batchSize int) {
+func worker(urls <-chan string, results chan<- *Crawl, userAgent string, wg *sync.WaitGroup, delay time.Duration, batchSize int) {
 	defer wg.Done()
-	batch := make([]Crawl, 0, batchSize)
-
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("panic occurred:", err)
+		}
+	}()
 	for url := range urls {
 		result := fetchUrl(url, userAgent)
-		batch = append(batch, result)
-		if len(batch) >= batchSize {
-			results <- batch
-			batch = make([]Crawl, 0, batchSize)
+		if result == nil {
+			continue
 		}
+
+		results <- result
 		time.Sleep(delay)
 	}
 
-	if len(batch) > 0 {
-		results <- batch
-	}
-
 }
 
-func processURLs(urls []string, numWorkers int, requestDelay time.Duration, userAgent string, batchSize int) <-chan []Crawl {
+func processURLs(urls []string, numWorkers int, requestDelay time.Duration, userAgent string, batchSize int) <-chan *Crawl {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("panic occurred:", err)
+		}
+	}()
+
 	var wg sync.WaitGroup
 	urlChan := make(chan string, len(urls))
-	results := make(chan []Crawl, len(urls)/batchSize+1)
+	results := make(chan *Crawl, len(urls)/batchSize+1)
 
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
@@ -158,13 +166,17 @@ func processURLs(urls []string, numWorkers int, requestDelay time.Duration, user
 func StartCrawl(ctx context.Context, urls string, userAgent string) {
 	runtime.EventsOffAll(ctx)
 	urlList := strings.Split(urls, "\n")
-	crawlResult = &[]Crawl{}
 	userAgent = getUserAgent(userAgent)
-	const batchSize = 25
+	const batchSize = 1
 	log.Println("URL List:", len(urlList))
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("panic occurred:", err)
+		}
+	}()
 
 	const numWorkers = 50
-	const requestDelay = 100 * time.Millisecond
+	const requestDelay = 0 * time.Millisecond
 
 	results := processURLs(urlList, numWorkers, requestDelay, userAgent, batchSize)
 
