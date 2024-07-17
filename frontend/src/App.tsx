@@ -145,7 +145,7 @@ function App() {
         {results.length} / {totalCount}
       </div>
       <div>
-        v0.0.29
+        v0.0.30
       </div>
       <Button onClick={() => SaveFile(results)}> Export </Button>
     </div>
