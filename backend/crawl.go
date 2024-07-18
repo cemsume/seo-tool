@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/google/uuid"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -131,8 +132,7 @@ func worker(urls <-chan string, results chan<- *Crawl, userAgent string, wg *syn
 	}
 
 }
-
-func processURLs(urls []string, numWorkers int, requestDelay time.Duration, userAgent string, batchSize int) <-chan *Crawl {
+func processURLs(urls []string, numWorkers int, requestDelay time.Duration, userAgent string, batchSize int) (<-chan *Crawl, <-chan struct{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("panic occurred:", err)
@@ -142,7 +142,7 @@ func processURLs(urls []string, numWorkers int, requestDelay time.Duration, user
 	var wg sync.WaitGroup
 	urlChan := make(chan string, len(urls))
 	results := make(chan *Crawl, len(urls)/batchSize+1)
-
+	done := make(chan struct{})
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go worker(urlChan, results, userAgent, &wg, requestDelay, batchSize)
@@ -157,13 +157,14 @@ func processURLs(urls []string, numWorkers int, requestDelay time.Duration, user
 
 	go func() {
 		wg.Wait()
+		close(done)
 		close(results)
 	}()
 
-	return results
+	return results, done
 }
 
-func StartCrawl(ctx context.Context, urls string, userAgent string) {
+func StartCrawl(ctx context.Context, urls string, userAgent string) string {
 	runtime.EventsOffAll(ctx)
 	urlList := strings.Split(urls, "\n")
 	userAgent = getUserAgent(userAgent)
@@ -178,13 +179,24 @@ func StartCrawl(ctx context.Context, urls string, userAgent string) {
 	const numWorkers = 50
 	const requestDelay = 0 * time.Millisecond
 
-	results := processURLs(urlList, numWorkers, requestDelay, userAgent, batchSize)
+	results, done := processURLs(urlList, numWorkers, requestDelay, userAgent, batchSize)
+	id := uuid.New()
 
 	go func() {
 		for result := range results {
-			runtime.EventsEmit(ctx, "crawlResult", result)
+			runtime.EventsEmit(ctx, id.String(), result)
 		}
 	}()
+
+	go func() {
+		<-done
+		runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+			Title:   "Crawl Completed",
+			Message: "Crawl completed successfully",
+		})
+	}()
+
+	return id.String()
 }
 
 func CancelFetch(ctx context.Context) {

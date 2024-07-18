@@ -23,7 +23,8 @@ import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the 
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import Drawer from 'react-modern-drawer'
 import 'react-modern-drawer/dist/index.css'
-import { EventsOn, EventsOffAll, EventsOff } from '../wailsjs/runtime/runtime.js'
+import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime.js'
+
 
 interface Result {
   Url: string;
@@ -53,23 +54,7 @@ function App() {
   const handleUrlChange = (event: any) => {
     setUrls(event.target.value);
   };
-  const data: Result[] = [];
-  useEffect(() => {
-    EventsOn("crawlResult", (result: Result) => {
-      setTimeout(() => {
-        gridRef.current!.api.applyTransactionAsync(
-          { add: [result] },
-        );
-      }, 0);
 
-      setResults((prevResults) => [...prevResults, result]);
-    });
-
-    return () => {
-      EventsOff('crawlResult');
-    };
-
-  }, []);
 
 
   const renderBottomPanel = () => {
@@ -152,14 +137,14 @@ function App() {
         {results.length} / {totalCount}
       </div>
       <div>
-        v0.0.31
+        v0.0.31.1
       </div>
       <Button onClick={() => SaveFile(results)}> Export </Button>
     </div>
   }
 
 
-
+  const [lastChannel, setLastChannel] = useState("")
   const onClickUrlButton = () => {
     setResults([])
     CancelFetch();
@@ -176,9 +161,23 @@ function App() {
     setTotalCount(newResults.length)
     StartCrawl(urls, selectedValue).then((response) => {
       setUrls("")
+      gridRef.current!.api.applyTransactionAsync({ remove: results })
+      if (lastChannel !== response && lastChannel !== "") {
+        EventsOff(lastChannel)
+      }
+      setLastChannel(response)
+
+      EventsOn(response, (result: Result) => {
+        setTimeout(() => {
+          gridRef.current!.api.applyTransactionAsync(
+            { add: [result] },
+          );
+        }, 0);
+
+        setResults((prevResults) => [...prevResults, result]);
+      });
     })
   }
-
 
 
   const [selectedValue, setSelectedValue] = useState('desktop');

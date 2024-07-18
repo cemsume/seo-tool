@@ -50,8 +50,8 @@ func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
 
-func (a *App) StartCrawl(urls string, userAgent string) {
-	backend.StartCrawl(a.ctx, urls, userAgent)
+func (a *App) StartCrawl(urls string, userAgent string) string {
+	return backend.StartCrawl(a.ctx, urls, userAgent)
 }
 
 func (a *App) CancelFetch() {
